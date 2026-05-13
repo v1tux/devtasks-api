@@ -1,12 +1,11 @@
-class Task:
-    def __init__(self, id: int, title: str, done: bool = False):
-        self.id = id
-        self.title = title
-        self.done = done
+from sqlalchemy import Boolean, Column, Integer, String
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'title': self.title,
-            'done': self.done
-        }
+from app.database.base import Base
+
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    done = Column(Boolean, default=False)

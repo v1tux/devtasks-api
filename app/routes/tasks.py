@@ -3,26 +3,17 @@ from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
 from app.models.task import Task
-from app.schemas.task import TaskCreate, TaskUpdate
+from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
 
 router = APIRouter()
 
 
-@router.get("/tasks")
+@router.get("/tasks", response_model=list[TaskResponse])
 def list_tasks(db: Session = Depends(get_db)):
-    tasks = db.query(Task).all()
-
-    return [
-        {
-            "id": task.id,
-            "title": task.title,
-            "done": task.done
-        }
-        for task in tasks
-    ]
+    return db.query(Task).all()
 
 
-@router.get("/tasks/{task_id}")
+@router.get("/tasks/{task_id}", response_model=TaskResponse)
 def get_task(
     task_id: int,
     db: Session = Depends(get_db)
@@ -35,14 +26,14 @@ def get_task(
             detail="Task not found"
         )
 
-    return {
-        "id": task.id,
-        "title": task.title,
-        "done": task.done
-    }
+    return task
 
 
-@router.post("/tasks")
+@router.post(
+    "/tasks",
+    response_model=TaskResponse,
+    status_code=201
+)
 def create_task(
     task: TaskCreate,
     db: Session = Depends(get_db)
@@ -55,15 +46,7 @@ def create_task(
     db.commit()
     db.refresh(new_task)
 
-    return {
-        "message": "Task created successfully",
-        "task": {
-            "id": new_task.id,
-            "title": new_task.title,
-            "done": new_task.done
-        }
-    }
-
+    return new_task
 
 @router.put("/tasks/{task_id}")
 def update_task(

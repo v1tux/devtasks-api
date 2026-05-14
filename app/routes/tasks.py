@@ -10,24 +10,11 @@ router = APIRouter()
 
 
 @router.get("/tasks", response_model=list[TaskResponse])
-def list_tasks(db: Session = Depends(get_db)):
-    return task_service.list_tasks(db)
-
-
-@router.get("/tasks/{task_id}", response_model=TaskResponse)
-def get_task(
-    task_id: int,
+def list_task(
+    done: bool | None = None,
     db: Session = Depends(get_db)
 ):
-    task = task_service.get_task_by_id(db, task_id)
-
-    if not task:
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found"
-        )
-
-    return task
+    return task_service.list_tasks(db, done)
 
 
 @router.post(

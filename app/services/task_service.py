@@ -4,8 +4,13 @@ from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate
 
 
-def list_tasks(db: Session):
-    return db.query(Task).all()
+def list_tasks(db: Session, done: bool | None = None):
+    query = db.query(Task)
+
+    if done is not None:
+        query = query.filter(Task.done == done)
+
+    return query.all()
 
 
 def get_task_by_id(db: Session, task_id: int):

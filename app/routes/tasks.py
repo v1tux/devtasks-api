@@ -4,13 +4,14 @@ from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
+from app.services import task_service
 
 router = APIRouter()
 
 
 @router.get("/tasks", response_model=list[TaskResponse])
 def list_tasks(db: Session = Depends(get_db)):
-    return db.query(Task).all()
+    return task_service.list_tasks(db)
 
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
@@ -18,7 +19,7 @@ def get_task(
     task_id: int,
     db: Session = Depends(get_db)
 ):
-    task = db.query(Task).filter(Task.id == task_id).first()
+    task = task_service.get_task_by_id(db, task_id)
 
     if not task:
         raise HTTPException(
@@ -38,15 +39,7 @@ def create_task(
     task: TaskCreate,
     db: Session = Depends(get_db)
 ):
-    new_task = Task(
-        title=task.title
-    )
-
-    db.add(new_task)
-    db.commit()
-    db.refresh(new_task)
-
-    return new_task
+    return task_service.create_task(db, task)
 
 @router.put("/tasks/{task_id}")
 def update_task(
@@ -54,7 +47,7 @@ def update_task(
     updated_task: TaskUpdate,
     db: Session = Depends(get_db)
 ):
-    task = db.query(Task).filter(Task.id == task_id).first()
+    task = task_service.get_task_by_id(db, task_id)
 
     if not task:
         raise HTTPException(
@@ -62,27 +55,18 @@ def update_task(
             detail="Task not found"
         )
 
-    task.title = updated_task.title
-    task.done = updated_task.done
-
-    db.commit()
-    db.refresh(task)
-
-    return {
-        "message": "Task updated successfully",
-        "task": {
-            "id": task.id,
-            "title": task.title,
-            "done": task.done
-        }
-    }
+    return task_service.update_task(
+        db,
+        task,
+        updated_task
+    )
 
 @router.delete("/tasks/{task_id}")
 def delete_task(
     task_id: int,
     db: Session = Depends(get_db)
 ):
-    task = db.query(Task).filter(Task.id == task_id).first()
+    task = task_service.get_task_by_id(db, task_id)
 
     if not task:
         raise HTTPException(
@@ -90,8 +74,7 @@ def delete_task(
             detail="Task not found"
         )
 
-    db.delete(task)
-    db.commit()
+    task_service.delete_task(db, task)
 
     return {
         "message": "Task deleted successfully"
